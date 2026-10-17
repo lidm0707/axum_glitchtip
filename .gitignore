@@ -1,0 +1,3 @@
+/target
+k6/reports/
+docker/.env

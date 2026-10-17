@@ -1,0 +1,76 @@
+name: axum_glithip
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: axum_glithip-db
+    environment:
+      POSTGRES_DB: duck
+      POSTGRES_USER: glitchtip
+      POSTGRES_PASSWORD: glitchtip
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U glitchtip -d duck"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  adminer:
+    image: adminer:latest
+    container_name: axum_glithip-adminer
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # default server shown on login page; user/pass = POSTGRES_USER/PASSWORD of db service
+      ADMINER_DEFAULT_SERVER: db
+    ports:
+      - "8080:8080"
+
+  valkey:
+    image: valkey/valkey:9
+    container_name: axum_glithip-valkey
+    volumes:
+      - valkeydata:/data
+
+  # named volumes come up root-owned; glitchtip runs as uid 5000 and its
+  # promote-spans task fails with a hidden PermissionError writing parquet —
+  # fix ownership once per volume creation before glitchtip starts
+  cold-storage-init:
+    image: alpine:3
+    user: root
+    command: ["sh", "-c", "chown -R 5000:5000 /data"]
+    volumes:
+      - coldstorage:/data  # if not can't make parquet file for span.
+    restart: "no"
+
+  glitchtip:
+    image: glitchtip/glitchtip:latest
+    container_name: axum_glithip-web
+    depends_on:
+      db:
+        condition: service_healthy
+      valkey:
+        condition: service_started
+      cold-storage-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    environment:
+      GLITCHTIP_COLD_STORAGE_DIR: /app/glitchtip/cold-storage
+      GLITCHTIP_ENABLE_DUCKDB: "true"
+      VALKEY_HOST: valkey
+      DATABASE_URL: postgres://glitchtip:glitchtip@db:5432/duck
+      SECRET_KEY: change-me-in-production
+      # GLITCHTIP_EMBED_WORKER: "true"
+      SERVER_ROLE: all_in_one
+    volumes:
+      - coldstorage:/app/glitchtip/cold-storage # if not can't make parquet file for span.
+    ports:
+      - "9000:8000"
+
+volumes:
+  pgdata:
+  valkeydata:
+  coldstorage:

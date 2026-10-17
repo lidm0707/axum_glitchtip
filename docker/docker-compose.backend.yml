@@ -1,0 +1,14 @@
+name: axum_glithip
+
+# backend is standalone: no shared network with the GlitchTip stack — it
+# reaches GlitchTip through the host-published port via SENTRY_DSN
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    container_name: axum_glithip-backend
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"

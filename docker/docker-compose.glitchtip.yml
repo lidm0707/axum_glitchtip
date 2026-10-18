@@ -1,5 +1,4 @@
-name: axum_glithip
-
+name: axum_glithip_only
 services:
   db:
     image: postgres:16-alpine

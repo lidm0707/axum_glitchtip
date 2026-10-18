@@ -17,7 +17,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /app/target/release/axum_glithip /usr/local/bin/app
+COPY --from=build /app/target/release/axum_glitchtip /usr/local/bin/app
 
 EXPOSE 3000
 

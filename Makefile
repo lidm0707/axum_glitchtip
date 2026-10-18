@@ -175,7 +175,7 @@ up-glitchtip: ## Start GlitchTip stack (db, valkey, web)
 	docker compose -f $(COMPOSE_GLITCHTIP) up -d db valkey cold-storage-init glitchtip
 
 down-glitchtip: ## Stop GlitchTip web only (db/valkey keep running)
-	docker compose -f $(COMPOSE_GLITCHTIP) rm -sf glitchtip
+	docker compose -f $(COMPOSE_GLITCHTIP) down -v
 
 logs-glitchtip: ## Tail glitchtip web logs
 	docker compose -f $(COMPOSE_GLITCHTIP) logs -f glitchtip
